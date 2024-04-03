@@ -5,7 +5,9 @@ const routes = require('./router/friends.js')
 
 let users = []
 
-const doesExist = (username)=>{
+const doesExist = (username)=>{ /* This  provides a manner in which it can be checked to see if the username exists in the list of registered users,
+to avoid duplications and keep the username unique.
+This is a utility function and not an endpoint.*/
   let userswithsamename = users.filter((user)=>{
     return user.username === username
   });
@@ -16,7 +18,9 @@ const doesExist = (username)=>{
   }
 }
 
-const authenticatedUser = (username,password)=>{
+const authenticatedUser = (username,password)=>{ /* This checks if the username and password match what you have in the list of registered users.
+It returns a boolean depending on whether the credentials match or not.
+This is also a utility function and not an endpoint.*/
   let validusers = users.filter((user)=>{
     return (user.username === username && user.password === password)
   });
@@ -29,11 +33,15 @@ const authenticatedUser = (username,password)=>{
 
 const app = express();
 
-app.use(session({secret:"fingerpint"},resave=true,saveUninitialized=true));
+app.use(session({secret:"fingerpint"},resave=true,saveUninitialized=true)); /* This creates and use a session object with user-defined secret,
+as a middleware to intercept the requests and ensure that the session is valid before processing the request.*/
 
 app.use(express.json());
 
-app.use("/friends", function auth(req,res,next){
+app.use("/friends", function auth(req,res,next){ /* Here ensures that all operations restricted to auhtenticated users are intercepted by the middleware.
+The following code ensures that all the endpoints starting with /friends go through the middleware.
+It retrieves the authorization details from the session and verifies it. If the token is validated, the user is aunteticated and the control is passed on to the next endpoint handler.
+If the token is invalid, the user is not authenticated and an error message is returned.*/
    if(req.session.authorization) {
        token = req.session.authorization['accessToken'];
        jwt.verify(token, "access",(err,user)=>{
@@ -50,7 +58,10 @@ app.use("/friends", function auth(req,res,next){
     }
 });
 
-app.post("/login", (req,res) => {
+app.post("/login", (req,res) => { /* Endpoint for the registered users to login.
+This end point returns an error if the username or password is not provided;
+creates an acess token that is valid for 1 hour (60X60 sec) then logs the user in if the credentials are correct,
+and throws and error if the credentials are incorrect.*/
   const username = req.body.username;
   const password = req.body.password;
 
@@ -72,7 +83,10 @@ app.post("/login", (req,res) => {
   }
 });
 
-app.post("/register", (req,res) => {
+app.post("/register", (req,res) => { /*as the intent of this application is to provide access to the API endpoints only to the authenticated users,
+you need to provide a way to register the users.
+This endpoint will be a post request that accepts username and password through the body.
+The user doesn’t have to be authenticated to access this endpoint.*/
   const username = req.body.username;
   const password = req.body.password;
 
@@ -93,3 +107,7 @@ const PORT =5000;
 app.use("/friends", routes);
 
 app.listen(PORT,()=>console.log("Server is running"));
+
+/*You have an express server that has been configured to run at port 5000.
+When you access the server with /friends, you can access the end points defined in routes/friends.js.
+But for doing this, you need to register as a new user in the /register endpoint and login with those credentials in the /login endpoint.*/
